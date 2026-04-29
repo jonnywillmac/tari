@@ -51,6 +51,37 @@ git push -u origin <short-topic-branch>
 
 Keep PRs focused. The contribution guide asks for small PRs, ideally under 400 lines of non-test code, with commit messages that explain why the change is needed.
 
+## Upstream PR Checklist
+
+Before opening or updating any PR to `tari-project/tari`, verify that the branch contains only the issue-specific work intended for upstream. Do not include fork-only notes, local agent configuration, unrelated cleanup, generated files, or opportunistic refactors.
+
+Use these checks from the PR branch:
+
+```bash
+git fetch upstream --prune
+git status --short --branch
+git log --oneline upstream/development..HEAD
+git diff --stat upstream/development...HEAD
+git diff upstream/development...HEAD
+```
+
+Review the output and confirm:
+
+- Every commit belongs to the issue being fixed.
+- Every changed file is necessary for the issue, its tests, or directly relevant documentation.
+- The PR stays focused on one job and is small enough to review comfortably.
+- Commit messages and the PR description explain why the change is needed.
+- Required tests, formatting, linting, and any focused manual verification are listed in the PR description.
+- Breaking-change implications are explicitly called out when relevant: hard fork, data directory reset, network compatibility, transaction compatibility, wallet recovery, or public API changes.
+- Fork-only files such as `.codex`, personal scripts, local notes, or private workflow guidance are not staged, committed, pushed, or included in the PR.
+
+If unrelated work is present, split it before opening the PR. Prefer a fresh branch from `upstream/development` and cherry-pick only the intended commits:
+
+```bash
+git switch -c <clean-topic-branch> upstream/development
+git cherry-pick <commit-sha>
+```
+
 ## Toolchain And Dependencies
 
 Use the repository toolchain files and CI configuration as source of truth:
@@ -108,6 +139,9 @@ cargo ci-cucumber
 ## Coding Standards
 
 - Follow existing local patterns and crate boundaries.
+- Match the style of the code immediately around the change. Before editing, read nearby modules, tests, error handling, logging, naming, async patterns, builder patterns, and helper APIs.
+- Prefer existing project abstractions and crate-local helper functions over introducing new patterns.
+- Keep edits surgical. Avoid broad formatting, naming churn, dependency swaps, or refactors unless they are necessary for the issue and justified in the commit or PR text.
 - Keep production code panic-free where possible; avoid `unwrap` and `expect` outside tests or unreachable setup paths.
 - Treat network, disk, config, CLI, dependency, and blockchain data as untrusted.
 - Bound allocations and validate lengths before using data from untrusted sources.
@@ -138,3 +172,5 @@ Primary docs to consult:
 - `.github/PULL_REQUEST_TEMPLATE.md` for required PR sections.
 
 PR titles should follow Conventional Commits. Fill out testing notes with the exact commands run and describe how reviewers can verify the change locally.
+
+Do not mention automated agents, coding assistants, or the tool that produced the change in commits, PR titles, PR descriptions, review comments, code comments, or documentation intended for upstream. Write all upstream-facing commentary as normal contributor communication focused on the code, motivation, risk, and verification.
