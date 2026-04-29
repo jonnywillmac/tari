@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is the Minotari/Tari Rust workspace. The default contribution branch is `development`; almost all new code should be based there unless a maintainer explicitly asks for `mainnet`, `nextnet`, or another release branch. The root `Cargo.toml` defines the workspace and pins the Rust edition and MSRV metadata.
+This is the Minotari/Tari Rust workspace. The upstream contribution base branch is `upstream/development`; almost all new upstream code should be based there unless a maintainer explicitly asks for `mainnet`, `nextnet`, or another release branch. The local fork's `development` branch may contain fork-only guidance such as this file, so do not assume it is safe as a PR base. The root `Cargo.toml` defines the workspace and pins the Rust edition and MSRV metadata.
 
 Core areas:
 
@@ -23,9 +23,10 @@ git status --short --branch
 git remote -v
 ```
 
-If the checkout is detached or behind upstream, fetch and switch to the current upstream development branch before making changes:
+If the checkout is detached or behind upstream, fetch the current refs and decide whether the work is fork-only guidance or an upstream contribution:
 
 ```bash
+git fetch upstream --prune
 git fetch origin --prune
 git switch development
 git merge --ff-only origin/development
@@ -37,9 +38,9 @@ For external contributions, prefer a fork-based remote setup. Keep the canonical
 git remote rename origin upstream
 git remote add origin git@github.com:<your-user>/tari.git
 git fetch upstream --prune
+git fetch origin --prune
 git switch development
-git merge --ff-only upstream/development
-git switch -c <short-topic-branch>
+git merge --ff-only origin/development
 ```
 
 Do not push directly to `tari-project/tari` unless the user explicitly confirms they have maintainer access and intend to do that. Before pushing, verify that `origin` points at the fork:
@@ -50,6 +51,42 @@ git push -u origin <short-topic-branch>
 ```
 
 Keep PRs focused. The contribution guide asks for small PRs, ideally under 400 lines of non-test code, with commit messages that explain why the change is needed.
+
+## Branch Strategy
+
+Treat branch purpose as explicit:
+
+- `origin/development`: the contributor fork's working branch. It may include fork-only guidance, ignore rules, local workflow docs, or other changes that should not automatically go upstream.
+- `upstream/development`: the canonical upstream base. Use this as the base for every branch intended for a PR to `tari-project/tari`.
+- topic branches from `upstream/development`: upstream-safe branches containing only one issue's changes.
+
+To update fork-only guidance, work on `development` and push only to `origin`:
+
+```bash
+git fetch origin --prune
+git switch development
+git merge --ff-only origin/development
+# edit guidance files
+git add AGENTS.md .gitignore
+git commit -m "docs: update local contribution guidance"
+git push origin development
+```
+
+To start upstream contribution work, always branch from `upstream/development`, even if `origin/development` has newer fork-only guidance:
+
+```bash
+git fetch upstream --prune
+git switch -c <issue-topic-branch> upstream/development
+```
+
+Do not merge `origin/development` into an upstream PR branch. If useful guidance needs to be consulted, read it from `origin/development` or from the working tree, but keep the PR branch history based on `upstream/development`.
+
+Before pushing an upstream PR branch, verify that it has no fork-only guidance commits:
+
+```bash
+git log --oneline upstream/development..HEAD
+git diff --name-only upstream/development...HEAD
+```
 
 ## Upstream PR Checklist
 
